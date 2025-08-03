@@ -1,5 +1,8 @@
 package br.com.wallet.manager.controller.advice;
 
+import br.com.wallet.manager.domain.exceptions.BrapiErrorException;
+import br.com.wallet.manager.domain.exceptions.FiiCrawlerErrorException;
+import br.com.wallet.manager.domain.exceptions.FinnHubErrorException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -18,5 +21,23 @@ public class ValidationExceptionHandler {
                 .map(err -> err.getField() + ": " + err.getDefaultMessage())
                 .collect(Collectors.joining(", "));
         return ResponseEntity.badRequest().body("Validation failed: " + errorMessage);
+    }
+
+    @ExceptionHandler(FinnHubErrorException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ResponseEntity<String> handleFinnHubError(FinnHubErrorException e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+    }
+
+    @ExceptionHandler(BrapiErrorException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ResponseEntity<String> handleBrapiError(BrapiErrorException e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+    }
+
+    @ExceptionHandler(FiiCrawlerErrorException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ResponseEntity<String> handleFiiCrawlerError(FiiCrawlerErrorException e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
     }
 }

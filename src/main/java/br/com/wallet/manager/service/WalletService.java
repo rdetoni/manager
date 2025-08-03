@@ -3,6 +3,9 @@ package br.com.wallet.manager.service;
 import br.com.wallet.manager.controller.requests.AssetCreateRequest;
 import br.com.wallet.manager.controller.requests.BondCreateRequest;
 import br.com.wallet.manager.controller.requests.CriptoCreateRequest;
+import br.com.wallet.manager.domain.exceptions.BrapiErrorException;
+import br.com.wallet.manager.domain.exceptions.FiiCrawlerErrorException;
+import br.com.wallet.manager.domain.exceptions.FinnHubErrorException;
 import br.com.wallet.manager.model.entities.BRStock;
 import br.com.wallet.manager.model.entities.Bonds;
 import br.com.wallet.manager.model.entities.Cripto;
@@ -27,16 +30,18 @@ public class WalletService {
     private final CriptoRepository criptoRepository;
     private final FIIRepository fiiRepository;
     private final USStockRepository usStockRepository;
-    private final FinnhubService finnhubService;
+    private final FinnHubService finnhubService;
     private final FiiCrawlerService fiiCrawlerService;
+    private final BrapiService brapiService;
 
     public WalletService(BondsRepository bondsRepository,
                         BRStockRepository brStockRepository,
                         CriptoRepository criptoRepository,
                         FIIRepository fiiRepository,
                         USStockRepository usStockRepository,
-                        FinnhubService finnhubService,
-                        FiiCrawlerService fiiCrawlerService) {
+                        FinnHubService finnhubService,
+                        FiiCrawlerService fiiCrawlerService,
+                        BrapiService brapiService) {
         this.bondsRepository = bondsRepository;
         this.brStockRepository = brStockRepository;
         this.criptoRepository = criptoRepository;
@@ -44,6 +49,7 @@ public class WalletService {
         this.usStockRepository = usStockRepository;
         this.finnhubService = finnhubService;
         this.fiiCrawlerService = fiiCrawlerService;
+        this.brapiService = brapiService;
     }
 
     public void createBond(BondCreateRequest request) {
@@ -117,34 +123,27 @@ public class WalletService {
     }
 
     @Transactional
-    public void createFii(AssetCreateRequest request) {
+    public void createFii(AssetCreateRequest request) throws BrapiErrorException, FiiCrawlerErrorException {
         val averagePrice = request.getPaidAmount().divide(BigDecimal.valueOf(request.getQuantity()),
                 RoundingMode.HALF_UP);
-        BigDecimal lastPrice;
-        try {
-            lastPrice = BigDecimal.valueOf(this.finnhubService.getQuote(request.getTicker()).getC());
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to fetch FII last price", e);
-        }
+        val brapiQuote = this.brapiService.getQuote(request.getTicker());
+        val lastPrice = brapiQuote.getRegularMarketPrice();
         val gainLoss = lastPrice.subtract(averagePrice).multiply(BigDecimal.valueOf(request.getQuantity()));
         val gainLossPercentage = gainLoss.divide(averagePrice, RoundingMode.HALF_UP)
                 .multiply(BigDecimal.valueOf(100));
         val currentTotal = lastPrice.multiply(BigDecimal.valueOf(request.getQuantity()));
-        double dividendYield;
+        double lastDividend;
         double pVp;
-        try {
-            val fiiCrawlerResponse = this.fiiCrawlerService.getFiiData(request.getTicker());
-            dividendYield = Double.parseDouble(fiiCrawlerResponse.getLastDividend());
-            pVp = Double.parseDouble(fiiCrawlerResponse.getPVp());
-        }catch (Exception e) {
-            throw new RuntimeException("Failed to fetch FII dividend yield", e);
-        }
-        val dividendYieldOnCost = dividendYield * 100 / averagePrice.doubleValue();
+        val fiiCrawlerResponse = this.fiiCrawlerService.getFiiData(request.getTicker());
+        lastDividend = Double.parseDouble(fiiCrawlerResponse.getLastDividend());
+        pVp = Double.parseDouble(fiiCrawlerResponse.getPVp());
+        val dividendYieldOnCost = lastDividend * 100 / averagePrice.doubleValue();
+        val dividendYield = lastDividend * 100 / lastPrice.doubleValue();
         val pVpOnCost = pVp * 100 / averagePrice.doubleValue();
 
         val fii = FII.builder()
                 .ticker(request.getTicker())
-                .name(request.getName())
+                .name(brapiQuote.getLongName())
                 .averagePrice(averagePrice)
                 .lastPrice(lastPrice)
                 .gainLoss(gainLoss)
@@ -156,6 +155,7 @@ public class WalletService {
                 .dividendYieldOnCost(dividendYieldOnCost)
                 .pVp(pVp)
                 .pVpOnCost(pVpOnCost)
+                .lastDividend(lastDividend)
                 .build();
 
         this.fiiRepository.save(fii);

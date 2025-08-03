@@ -13,7 +13,7 @@ import java.util.Optional;
 
 @Service
 @Slf4j
-public class FinnhubService {
+public class FinnHubService {
 
     private final RestTemplate restTemplate;
 
@@ -23,7 +23,7 @@ public class FinnhubService {
     @Value("${services.finnhub.url}")
     private String baseUrl;
 
-    public FinnhubService() {
+    public FinnHubService() {
         this.restTemplate = new RestTemplate();
     }
 

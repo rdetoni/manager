@@ -4,6 +4,9 @@ import br.com.wallet.manager.controller.requests.AssetCreateRequest;
 import br.com.wallet.manager.controller.requests.BondCreateRequest;
 import br.com.wallet.manager.controller.requests.CriptoCreateRequest;
 import br.com.wallet.manager.domain.components.AssetStrategyFactory;
+import br.com.wallet.manager.domain.exceptions.BrapiErrorException;
+import br.com.wallet.manager.domain.exceptions.FiiCrawlerErrorException;
+import br.com.wallet.manager.domain.exceptions.FinnHubErrorException;
 import br.com.wallet.manager.service.WalletService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +38,7 @@ public class WalletController {
 
     @PostMapping("/asset")
     @ResponseStatus(HttpStatus.CREATED)
-    public void createAsset(@RequestBody @Valid AssetCreateRequest request) {
+    public void createAsset(@RequestBody @Valid AssetCreateRequest request) throws BrapiErrorException, FiiCrawlerErrorException {
         this.assetStrategyFactory.getStrategy(request.getType()).create(request);
     }
 
