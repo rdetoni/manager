@@ -2,6 +2,7 @@ package br.com.wallet.manager.domain.components;
 
 import br.com.wallet.manager.controller.requests.AssetCreateRequest;
 import br.com.wallet.manager.domain.exceptions.BrapiErrorException;
+import br.com.wallet.manager.domain.exceptions.CreateAssetException;
 import br.com.wallet.manager.domain.exceptions.FiiCrawlerErrorException;
 import br.com.wallet.manager.domain.interfaces.AssetCreationStrategy;
 import br.com.wallet.manager.service.WalletService;
@@ -17,7 +18,7 @@ public class FiiStrategy implements AssetCreationStrategy {
         this.walletService = walletService;
     }
 
-    public void create(AssetCreateRequest request) throws BrapiErrorException, FiiCrawlerErrorException {
+    public void create(AssetCreateRequest request) throws BrapiErrorException, FiiCrawlerErrorException, CreateAssetException {
         this.walletService.createFii(request);
     }
 }

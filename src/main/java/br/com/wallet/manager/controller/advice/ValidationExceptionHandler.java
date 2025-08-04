@@ -1,6 +1,7 @@
 package br.com.wallet.manager.controller.advice;
 
 import br.com.wallet.manager.domain.exceptions.BrapiErrorException;
+import br.com.wallet.manager.domain.exceptions.CreateAssetException;
 import br.com.wallet.manager.domain.exceptions.FiiCrawlerErrorException;
 import br.com.wallet.manager.domain.exceptions.FinnHubErrorException;
 import org.springframework.http.HttpStatus;
@@ -39,5 +40,11 @@ public class ValidationExceptionHandler {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ResponseEntity<String> handleFiiCrawlerError(FiiCrawlerErrorException e) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+    }
+
+    @ExceptionHandler(CreateAssetException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ResponseEntity<String> handleFiiCrawlerError(CreateAssetException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
     }
 }

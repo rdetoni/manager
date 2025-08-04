@@ -4,6 +4,7 @@ import br.com.wallet.manager.controller.requests.AssetCreateRequest;
 import br.com.wallet.manager.controller.requests.BondCreateRequest;
 import br.com.wallet.manager.controller.requests.CriptoCreateRequest;
 import br.com.wallet.manager.domain.exceptions.BrapiErrorException;
+import br.com.wallet.manager.domain.exceptions.CreateAssetException;
 import br.com.wallet.manager.domain.exceptions.FiiCrawlerErrorException;
 import br.com.wallet.manager.domain.exceptions.FinnHubErrorException;
 import br.com.wallet.manager.model.entities.BRStock;
@@ -123,7 +124,14 @@ public class WalletService {
     }
 
     @Transactional
-    public void createFii(AssetCreateRequest request) throws BrapiErrorException, FiiCrawlerErrorException {
+    public void createFii(AssetCreateRequest request) throws BrapiErrorException,
+                                                             FiiCrawlerErrorException,
+                                                             CreateAssetException {
+        if(this.fiiRepository.existsByTicker(request.getTicker())){
+            throw new CreateAssetException("The asset " + request.getTicker() + " already exists. " +
+                    "Use the update endpoint to add new acquisitions.");
+        }
+
         val averagePrice = request.getPaidAmount().divide(BigDecimal.valueOf(request.getQuantity()),
                 RoundingMode.HALF_UP);
         val brapiQuote = this.brapiService.getQuote(request.getTicker());
@@ -132,14 +140,13 @@ public class WalletService {
         val gainLossPercentage = gainLoss.divide(averagePrice, RoundingMode.HALF_UP)
                 .multiply(BigDecimal.valueOf(100));
         val currentTotal = lastPrice.multiply(BigDecimal.valueOf(request.getQuantity()));
-        double lastDividend;
-        double pVp;
         val fiiCrawlerResponse = this.fiiCrawlerService.getFiiData(request.getTicker());
-        lastDividend = Double.parseDouble(fiiCrawlerResponse.getLastDividend());
-        pVp = Double.parseDouble(fiiCrawlerResponse.getPVp());
+        val lastDividend = Double.parseDouble(fiiCrawlerResponse.getLastDividend());
+        val pVp = Double.parseDouble(fiiCrawlerResponse.getPVp());
+        val equitiValue = Double.parseDouble(fiiCrawlerResponse.getEquityValue());
         val dividendYieldOnCost = lastDividend * 100 / averagePrice.doubleValue();
         val dividendYield = lastDividend * 100 / lastPrice.doubleValue();
-        val pVpOnCost = pVp * 100 / averagePrice.doubleValue();
+        val pVpOnCost = averagePrice.doubleValue() / equitiValue;
 
         val fii = FII.builder()
                 .ticker(request.getTicker())

@@ -27,7 +27,7 @@ public class FiiCrawlerService {
         String url = String.format("%s/getFii?code=%s", baseUrl, code);
         val response = Optional.ofNullable(restTemplate.getForObject(url, FiiCrawler.class))
                 .orElseThrow(() -> new FiiCrawlerErrorException("Error fetching extra data for " + code));
-        if(response.getLastDividend() == null || response.getPVp() == null) {
+        if(response.getLastDividend() == null || response.getPVp() == null || response.getEquityValue() == null) {
             throw new FiiCrawlerErrorException("FII Crawler could not obtain some data for " + code);
         } else {
             return response;

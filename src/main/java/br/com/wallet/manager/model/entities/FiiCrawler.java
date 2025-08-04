@@ -15,4 +15,6 @@ public class FiiCrawler {
 
     @JsonProperty("pVp")
     private String pVp;
+
+    private String equityValue;
 }
