@@ -5,4 +5,5 @@ import org.springframework.data.repository.CrudRepository;
 
 public interface FIIRepository extends CrudRepository<FII, Long> {
     public boolean existsByTicker(String ticker);
+    public FII findByTicker(String ticker);
 }

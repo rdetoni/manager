@@ -1,6 +1,7 @@
 package br.com.wallet.manager.domain.components;
 
 import br.com.wallet.manager.controller.requests.AssetCreateRequest;
+import br.com.wallet.manager.controller.requests.AssetUpdateRequest;
 import br.com.wallet.manager.domain.interfaces.AssetCreationStrategy;
 import br.com.wallet.manager.service.WalletService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,4 +20,7 @@ public class BrStockStrategy implements AssetCreationStrategy {
     public void create(AssetCreateRequest request){
         this.walletService.createBrStock(request);
     }
+
+    @Override
+    public void update(AssetUpdateRequest request) {}
 }

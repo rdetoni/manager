@@ -1,12 +1,14 @@
 package br.com.wallet.manager.service;
 
 import br.com.wallet.manager.controller.requests.AssetCreateRequest;
+import br.com.wallet.manager.controller.requests.AssetUpdateRequest;
 import br.com.wallet.manager.controller.requests.BondCreateRequest;
 import br.com.wallet.manager.controller.requests.CriptoCreateRequest;
 import br.com.wallet.manager.domain.exceptions.BrapiErrorException;
 import br.com.wallet.manager.domain.exceptions.CreateAssetException;
 import br.com.wallet.manager.domain.exceptions.FiiCrawlerErrorException;
 import br.com.wallet.manager.domain.exceptions.FinnHubErrorException;
+import br.com.wallet.manager.domain.exceptions.UpdateAssetException;
 import br.com.wallet.manager.model.entities.BRStock;
 import br.com.wallet.manager.model.entities.Bonds;
 import br.com.wallet.manager.model.entities.Cripto;
@@ -23,6 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 public class WalletService {
@@ -163,7 +167,34 @@ public class WalletService {
                 .pVp(pVp)
                 .pVpOnCost(pVpOnCost)
                 .lastDividend(lastDividend)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
                 .build();
+
+        this.fiiRepository.save(fii);
+    }
+
+    @Transactional
+    public void updateFii(AssetUpdateRequest request) throws UpdateAssetException, BrapiErrorException {
+        val fii = Optional.ofNullable(this.fiiRepository.findByTicker(request.getTicker()))
+                .orElseThrow(() -> new UpdateAssetException("FII with ticker " + request.getTicker() + " not found."));
+
+        val averagePrice = fii.getCurrentTotal().add(request.getPaidAmount())
+                .divide(BigDecimal.valueOf(fii.getQuantity() + request.getQuantity()), RoundingMode.HALF_UP);
+        val brapiQuote = this.brapiService.getQuote(request.getTicker());
+        val lastPrice = brapiQuote.getRegularMarketPrice();
+        val gainLoss = lastPrice.subtract(averagePrice).multiply(BigDecimal.valueOf(fii.getQuantity() + request.getQuantity()));
+        val gainLossPercentage = gainLoss.divide(averagePrice, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100));
+        val currentTotal = lastPrice.multiply(BigDecimal.valueOf(fii.getQuantity() + request.getQuantity()));
+
+        fii.setAveragePrice(averagePrice);
+        fii.setGainLoss(gainLoss);
+        fii.setGainLossPercentage(gainLossPercentage);
+        fii.setCurrentTotal(currentTotal);
+        fii.setInvestedTotal(fii.getInvestedTotal().add(request.getPaidAmount()));
+        //fii.setQuantity(fii.getQuantity() + request.getQuantity());
+        fii.setUpdatedAt(LocalDateTime.now());
 
         this.fiiRepository.save(fii);
     }

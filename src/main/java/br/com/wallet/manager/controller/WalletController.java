@@ -1,6 +1,7 @@
 package br.com.wallet.manager.controller;
 
 import br.com.wallet.manager.controller.requests.AssetCreateRequest;
+import br.com.wallet.manager.controller.requests.AssetUpdateRequest;
 import br.com.wallet.manager.controller.requests.BondCreateRequest;
 import br.com.wallet.manager.controller.requests.CriptoCreateRequest;
 import br.com.wallet.manager.domain.components.AssetStrategyFactory;
@@ -8,10 +9,12 @@ import br.com.wallet.manager.domain.exceptions.BrapiErrorException;
 import br.com.wallet.manager.domain.exceptions.CreateAssetException;
 import br.com.wallet.manager.domain.exceptions.FiiCrawlerErrorException;
 import br.com.wallet.manager.domain.exceptions.FinnHubErrorException;
+import br.com.wallet.manager.domain.exceptions.UpdateAssetException;
 import br.com.wallet.manager.service.WalletService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,8 +42,16 @@ public class WalletController {
 
     @PostMapping("/asset")
     @ResponseStatus(HttpStatus.CREATED)
-    public void createAsset(@RequestBody @Valid AssetCreateRequest request) throws BrapiErrorException, FiiCrawlerErrorException, CreateAssetException {
+    public void createAsset(@RequestBody @Valid AssetCreateRequest request) throws BrapiErrorException,
+                                                                                   FiiCrawlerErrorException,
+                                                                                   CreateAssetException {
         this.assetStrategyFactory.getStrategy(request.getType()).create(request);
+    }
+
+    @PatchMapping("/asset")
+    @ResponseStatus(HttpStatus.OK)
+    public void updateAsset(@RequestBody @Valid AssetUpdateRequest request) throws UpdateAssetException, BrapiErrorException {
+        this.assetStrategyFactory.getStrategy(request.getType()).update(request);
     }
 
     @PostMapping("/cripto")
