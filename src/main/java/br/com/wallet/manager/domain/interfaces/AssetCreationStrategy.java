@@ -9,5 +9,5 @@ import br.com.wallet.manager.domain.exceptions.UpdateAssetException;
 
 public interface AssetCreationStrategy {
     public void create(AssetCreateRequest request) throws BrapiErrorException, FiiCrawlerErrorException, CreateAssetException;
-    public void update(AssetUpdateRequest request) throws UpdateAssetException, BrapiErrorException;
+    public void update(AssetUpdateRequest request) throws UpdateAssetException, BrapiErrorException, FiiCrawlerErrorException;
 }

@@ -147,10 +147,10 @@ public class WalletService {
         val fiiCrawlerResponse = this.fiiCrawlerService.getFiiData(request.getTicker());
         val lastDividend = Double.parseDouble(fiiCrawlerResponse.getLastDividend());
         val pVp = Double.parseDouble(fiiCrawlerResponse.getPVp());
-        val equitiValue = Double.parseDouble(fiiCrawlerResponse.getEquityValue());
+        val equityValue = Double.parseDouble(fiiCrawlerResponse.getEquityValue());
         val dividendYieldOnCost = lastDividend * 100 / averagePrice.doubleValue();
         val dividendYield = lastDividend * 100 / lastPrice.doubleValue();
-        val pVpOnCost = averagePrice.doubleValue() / equitiValue;
+        val pVpOnCost = averagePrice.doubleValue() / equityValue;
 
         val fii = FII.builder()
                 .ticker(request.getTicker())
@@ -161,7 +161,7 @@ public class WalletService {
                 .gainLossPercentage(gainLossPercentage)
                 .investedTotal(request.getPaidAmount())
                 .currentTotal(currentTotal)
-                .quantity(request.getQuantity())
+                .quantity(request.getQuantity().doubleValue())
                 .dividendYield(dividendYield)
                 .dividendYieldOnCost(dividendYieldOnCost)
                 .pVp(pVp)
@@ -175,25 +175,42 @@ public class WalletService {
     }
 
     @Transactional
-    public void updateFii(AssetUpdateRequest request) throws UpdateAssetException, BrapiErrorException {
+    public void updateFii(AssetUpdateRequest request) throws UpdateAssetException,
+                                                             BrapiErrorException,
+                                                             FiiCrawlerErrorException {
         val fii = Optional.ofNullable(this.fiiRepository.findByTicker(request.getTicker()))
                 .orElseThrow(() -> new UpdateAssetException("FII with ticker " + request.getTicker() + " not found."));
 
-        val averagePrice = fii.getCurrentTotal().add(request.getPaidAmount())
-                .divide(BigDecimal.valueOf(fii.getQuantity() + request.getQuantity()), RoundingMode.HALF_UP);
+        val quantity = fii.getQuantity() + request.getQuantity();
+        val averagePrice = fii.getCurrentTotal().add(request.getPaidAmount().subtract(BigDecimal.valueOf(request.getFees())))
+                .divide(BigDecimal.valueOf(quantity), RoundingMode.HALF_UP);
         val brapiQuote = this.brapiService.getQuote(request.getTicker());
         val lastPrice = brapiQuote.getRegularMarketPrice();
-        val gainLoss = lastPrice.subtract(averagePrice).multiply(BigDecimal.valueOf(fii.getQuantity() + request.getQuantity()));
+        val gainLoss = lastPrice.subtract(averagePrice).multiply(BigDecimal.valueOf(quantity));
         val gainLossPercentage = gainLoss.divide(averagePrice, RoundingMode.HALF_UP)
                 .multiply(BigDecimal.valueOf(100));
-        val currentTotal = lastPrice.multiply(BigDecimal.valueOf(fii.getQuantity() + request.getQuantity()));
+        val currentTotal = lastPrice.multiply(BigDecimal.valueOf(quantity));
+        val fiiCrawlerResponse = this.fiiCrawlerService.getFiiData(request.getTicker());
+        val lastDividend = Double.parseDouble(fiiCrawlerResponse.getLastDividend());
+        val dividendYield = lastDividend * 100 / lastPrice.doubleValue();
+        val dividendYieldOnCost = lastDividend * 100 / averagePrice.doubleValue();
+        val pVp = Double.parseDouble(fiiCrawlerResponse.getPVp());
+        val equityValue = Double.parseDouble(fiiCrawlerResponse.getEquityValue());
+        val pVpOnCost = averagePrice.doubleValue() / equityValue;
 
         fii.setAveragePrice(averagePrice);
+        fii.setLastPrice(lastPrice);
         fii.setGainLoss(gainLoss);
         fii.setGainLossPercentage(gainLossPercentage);
+        fii.setInvestedTotal(fii.getInvestedTotal()
+                .add(request.getPaidAmount().subtract(BigDecimal.valueOf(request.getFees()))));
         fii.setCurrentTotal(currentTotal);
-        fii.setInvestedTotal(fii.getInvestedTotal().add(request.getPaidAmount()));
-        //fii.setQuantity(fii.getQuantity() + request.getQuantity());
+        fii.setQuantity(quantity);
+        fii.setDividendYield(dividendYield);
+        fii.setDividendYieldOnCost(dividendYieldOnCost);
+        fii.setPVp(pVp);
+        fii.setPVpOnCost(pVpOnCost);
+        fii.setLastDividend(lastDividend);
         fii.setUpdatedAt(LocalDateTime.now());
 
         this.fiiRepository.save(fii);

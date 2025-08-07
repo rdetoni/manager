@@ -46,7 +46,7 @@ public class FII {
     private BigDecimal currentTotal;
 
     @Column(name = "quantity", nullable = false)
-    private Integer quantity;
+    private Double quantity;
 
     @Column(name = "dividend_yield", nullable = false)
     private Double dividendYield;

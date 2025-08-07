@@ -28,7 +28,9 @@ public class FiiStrategy implements AssetCreationStrategy {
     }
 
     @Override
-    public void update(AssetUpdateRequest request) throws UpdateAssetException, BrapiErrorException {
+    public void update(AssetUpdateRequest request) throws UpdateAssetException,
+                                                          BrapiErrorException,
+                                                          FiiCrawlerErrorException {
         this.walletService.updateFii(request);
     }
 }

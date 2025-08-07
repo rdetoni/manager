@@ -50,7 +50,9 @@ public class WalletController {
 
     @PatchMapping("/asset")
     @ResponseStatus(HttpStatus.OK)
-    public void updateAsset(@RequestBody @Valid AssetUpdateRequest request) throws UpdateAssetException, BrapiErrorException {
+    public void updateAsset(@RequestBody @Valid AssetUpdateRequest request) throws UpdateAssetException,
+                                                                                   BrapiErrorException,
+                                                                                   FiiCrawlerErrorException {
         this.assetStrategyFactory.getStrategy(request.getType()).update(request);
     }
 
