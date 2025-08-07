@@ -1,5 +1,6 @@
 package br.com.wallet.manager.controller.advice;
 
+import br.com.wallet.manager.domain.exceptions.AssetNotFoundException;
 import br.com.wallet.manager.domain.exceptions.BrapiErrorException;
 import br.com.wallet.manager.domain.exceptions.CreateAssetException;
 import br.com.wallet.manager.domain.exceptions.FiiCrawlerErrorException;
@@ -52,6 +53,12 @@ public class ValidationExceptionHandler {
     @ExceptionHandler(UpdateAssetException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ResponseEntity<String> handleUpdateAssetError(UpdateAssetException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    }
+
+    @ExceptionHandler(AssetNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ResponseEntity<String> handleFindAssetError(AssetNotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
     }
 }

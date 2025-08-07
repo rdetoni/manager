@@ -5,15 +5,20 @@ import br.com.wallet.manager.controller.requests.AssetUpdateRequest;
 import br.com.wallet.manager.controller.requests.BondCreateRequest;
 import br.com.wallet.manager.controller.requests.CriptoCreateRequest;
 import br.com.wallet.manager.domain.components.AssetStrategyFactory;
+import br.com.wallet.manager.domain.exceptions.AssetNotFoundException;
 import br.com.wallet.manager.domain.exceptions.BrapiErrorException;
 import br.com.wallet.manager.domain.exceptions.CreateAssetException;
 import br.com.wallet.manager.domain.exceptions.FiiCrawlerErrorException;
 import br.com.wallet.manager.domain.exceptions.FinnHubErrorException;
 import br.com.wallet.manager.domain.exceptions.UpdateAssetException;
+import br.com.wallet.manager.model.entities.FII;
 import br.com.wallet.manager.service.WalletService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -54,6 +59,12 @@ public class WalletController {
                                                                                    BrapiErrorException,
                                                                                    FiiCrawlerErrorException {
         this.assetStrategyFactory.getStrategy(request.getType()).update(request);
+    }
+
+    @GetMapping("/asset")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<FII> getAsset(@RequestParam @NotNull String ticker) throws AssetNotFoundException {
+        return ResponseEntity.status(HttpStatus.OK).body(this.walletService.getFii(ticker));
     }
 
     @PostMapping("/cripto")

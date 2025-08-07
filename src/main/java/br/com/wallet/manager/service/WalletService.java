@@ -4,6 +4,7 @@ import br.com.wallet.manager.controller.requests.AssetCreateRequest;
 import br.com.wallet.manager.controller.requests.AssetUpdateRequest;
 import br.com.wallet.manager.controller.requests.BondCreateRequest;
 import br.com.wallet.manager.controller.requests.CriptoCreateRequest;
+import br.com.wallet.manager.domain.exceptions.AssetNotFoundException;
 import br.com.wallet.manager.domain.exceptions.BrapiErrorException;
 import br.com.wallet.manager.domain.exceptions.CreateAssetException;
 import br.com.wallet.manager.domain.exceptions.FiiCrawlerErrorException;
@@ -214,6 +215,11 @@ public class WalletService {
         fii.setUpdatedAt(LocalDateTime.now());
 
         this.fiiRepository.save(fii);
+    }
+
+    public FII getFii(String ticker) throws AssetNotFoundException{
+        return Optional.ofNullable(this.fiiRepository.findByTicker(ticker))
+                .orElseThrow(() -> new AssetNotFoundException("Could not find resource with ticker " + ticker));
     }
 
     public void createUsStock(AssetCreateRequest request) {
